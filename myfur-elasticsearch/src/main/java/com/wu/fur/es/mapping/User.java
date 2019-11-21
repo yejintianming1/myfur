@@ -6,8 +6,14 @@ import lombok.Data;
 @Data
 public class User {
 
-    @EsFieldType("text")
+//    @EsFieldType("text")
     private String name;
 
-    private String age;
+    private Integer age;
+
+    private String remark;
+
+    private String phone;
+
+    private String email;
 }

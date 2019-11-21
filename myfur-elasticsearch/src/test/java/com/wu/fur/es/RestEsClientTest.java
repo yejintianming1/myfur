@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
+import javax.annotation.Resource;
 import javax.jws.soap.SOAPBinding;
 import java.io.IOException;
 import java.util.List;
@@ -18,25 +19,31 @@ import java.util.List;
 @SpringBootTest(classes=MainApplication.class)// 指定spring-boot的启动类 
 public class RestEsClientTest{
 
-    @Autowired
-    private RestEsClient restEsClient1;
-
-    @Autowired
-    private RestEsClient restEsClient2;
+//    @Autowired
+//    private RestEsClient restEsClient1;
 
 //    @Autowired
-//    private RestEsClient restEsClient;
+//    private RestEsClient restEsClient2;
+
+    @Autowired
+    private RestEsClient userRestEsClient;
 
 
     @Test
-    public void test1() throws IOException {
+    public void test1() throws Exception {
 //        restEsClient1.getDocHockey();
 //        restEsClient2.createIndex(User.class);
-        User u = new User();
+//        User u = new User();
 //        u.setName("小明");
-        u.setAge("28");
+//        u.setAge(28);
+//        u.setEmail("2324434@qq.com");
+//        u.setPhone("12345678901");
+//        u.setRemark("这个是测试数据，请忽略");
 //        restEsClient2.indexDoc(u);
-        EsPagination<User> userEsPagination = restEsClient2.search(u, null, null, null, null, null, new EsPage(1,100), User.class);
+        User u = new User();
+        u.setName("小明");
+//        u.setPhone("12345678901");
+        EsPagination<User> userEsPagination = userRestEsClient.search(u, null, null, null, null, null, new EsPage(1,100), User.class);
         System.out.println(userEsPagination.getData());
 
     }

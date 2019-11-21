@@ -46,5 +46,23 @@ public class EsReader {
         return routing;
     }
 
+    public static <T> String readFieldValue(T t,String fieldName) throws Exception {
+        String routing = null;
+        Class<?> clazz = t.getClass();
+        Field[] fields = clazz.getDeclaredFields();
+        for (Field field: fields
+        ) {
+            if (fieldName.equals(field.getName())) {
+                field.setAccessible(true);
+                Object o = field.get(t);
+                if (o != null) {
+                    routing = o.toString();
+                }
+                break;
+            }
+        }
+        return routing;
+    }
+
 
 }

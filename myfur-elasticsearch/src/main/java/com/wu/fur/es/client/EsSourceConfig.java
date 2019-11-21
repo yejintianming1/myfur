@@ -19,5 +19,7 @@ public class EsSourceConfig {
     private String type = "_doc";
     private int shards = 10;//分片
     private int replicas = 20;//副本
+    private String routingField;//路由字段
+    private EsRoutingAlgorithm esRoutingAlgorithm;//路由算法类
 
 }

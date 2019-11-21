@@ -22,7 +22,7 @@ public class RestEsClientRegistry implements BeanDefinitionRegistryPostProcessor
 
 
     public static String base_client = "client";
-    public static String base_bean_name = "restEsClient";
+    public static String default_base_bean_name = "restEsClient";
 
     private ApplicationContext applicationContext;
 
@@ -43,6 +43,9 @@ public class RestEsClientRegistry implements BeanDefinitionRegistryPostProcessor
             String type = env.getProperty("es.clientSource."+base_client+i+".type");
             String shards = env.getProperty("es.clientSource."+base_client+i+".shards");
             String replicas = env.getProperty("es.clientSource."+base_client+i+".replicas");
+            String routingField = env.getProperty("es.clientSource."+base_client+i+".routing-field");
+            String routingAlgorithmClassName = env.getProperty("es.clientSource."+base_client+i+".routing-algorithm-className");
+            String beanName = env.getProperty("es.clientSource."+base_client+i+".bean-name");
 
             if (StringUtils.isAnyBlank(hostPorts,index,type)) {//任意一个为空
                 throw new RuntimeException("配置信息不完整");
@@ -71,12 +74,33 @@ public class RestEsClientRegistry implements BeanDefinitionRegistryPostProcessor
             if (!StringUtils.isBlank(type)) esSourceConfig.setType(type);
             if (!StringUtils.isBlank(shards)) esSourceConfig.setShards(Integer.valueOf(shards));
             if (!StringUtils.isBlank(replicas)) esSourceConfig.setReplicas(Integer.valueOf(replicas));
+            //路由算法
+            if (!StringUtils.isBlank(routingField)) esSourceConfig.setRoutingField(routingField);
+            if (!StringUtils.isBlank(routingAlgorithmClassName)) {
+                Class<?> result = null;
+                try {
+                    result = Class.forName(routingAlgorithmClassName);
+                    if (!EsRoutingAlgorithm.class.isAssignableFrom(result)) {
+                        throw new RuntimeException(String.format("Class %s should be implement %s", routingAlgorithmClassName, EsRoutingAlgorithm.class.getName()));
+                    }
+                } catch (ClassNotFoundException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    esSourceConfig.setEsRoutingAlgorithm((EsRoutingAlgorithm)result.newInstance());
+                } catch (InstantiationException e) {
+                    e.printStackTrace();
+                } catch (IllegalAccessException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (StringUtils.isBlank(beanName)) beanName = default_base_bean_name+i;
 
             BeanDefinition beanDe = BeanDefinitionBuilder.rootBeanDefinition(RestEsClient.class)
                     .addPropertyValue("esSourceConfig",esSourceConfig)
                     .setAutowireMode(GenericBeanDefinition.AUTOWIRE_BY_NAME)
                     .getBeanDefinition();
-            registry.registerBeanDefinition(base_bean_name+i,beanDe);
+            registry.registerBeanDefinition(beanName,beanDe);
 
         }
 

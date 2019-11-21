@@ -13,7 +13,7 @@ import java.io.IOException;
 public class EsTestController {
 
     @Autowired
-    private RestEsClient restEsClient2;
+    private RestEsClient userRestEsClient;
 
     @RequestMapping("/say")
     public String sayHello() {
@@ -21,10 +21,10 @@ public class EsTestController {
     }
 
     @RequestMapping("/indexDoc")
-    public boolean indexDoc() throws IOException {
+    public boolean indexDoc() throws Exception {
         User u = new User();
         u.setName("小明");
-        u.setAge("28");
-        return restEsClient2.indexDoc(u);
+        u.setAge(28);
+        return userRestEsClient.indexDoc(u);
     }
 }

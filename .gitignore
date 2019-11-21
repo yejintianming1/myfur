@@ -1,0 +1,4 @@
+# Project exclude paths
+/myfur-db/target/
+/myfur-elasticsearch/target/
+/myfur-lucene/target/

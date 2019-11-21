@@ -300,7 +300,8 @@ public class RestEsClient {
     }
 
     public <T> boolean indexDoc(T t) throws Exception {
-        return indexDoc(t,EsReader.readRouting(t));
+//        return indexDoc(t,EsReader.readRouting(t));
+        return indexDoc(t,esSourceConfig.getEsRoutingAlgorithm().doRouting(EsReader.readFieldValue(t,esSourceConfig.getRoutingField())));
     }
 
     //索引一个document
@@ -467,12 +468,19 @@ public class RestEsClient {
 
     }
 
+    public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,Class<T> clazz) throws Exception {
+        return search(terms,matches,orTerms,orMatches,prefixItems,sortFields,page,esSourceConfig.getEsRoutingAlgorithm().doRouting(EsReader.readFieldValue(terms,esSourceConfig.getRoutingField())),clazz);
+    }
+
     /**
      * 条件搜索
      */
-    public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,Class<T> clazz) throws IOException {
+    public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,String routing,Class<T> clazz) throws IOException {
         SearchRequest searchRequest = new SearchRequest(esSourceConfig.getIndex());
         searchRequest.types(esSourceConfig.getType());
+        if (!StringUtils.isBlank(routing)) {
+            searchRequest.routing(routing);
+        }
         SearchSourceBuilder sb = new SearchSourceBuilder();
         BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();//构建复合查询
         String termsStr = JSONObject.toJSONString(terms);
