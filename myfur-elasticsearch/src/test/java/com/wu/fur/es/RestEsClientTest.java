@@ -40,9 +40,21 @@ public class RestEsClientTest{
 //        u.setPhone("12345678901");
 //        u.setRemark("这个是测试数据，请忽略");
 //        restEsClient2.indexDoc(u);
+
+//        boolean index = userRestEsClient.createIndex(User.class);
+//        System.out.println(index);
+
+//        User u = new User();
+//        u.setName("小明");
+//        u.setPhone("18297767423");
+//        u.setRemark("测试");
+//        u.setAge(16);
+//        boolean b = userRestEsClient.indexDoc(u);
+//        System.out.println(b);
+
         User u = new User();
         u.setName("小明");
-//        u.setPhone("12345678901");
+//        u.setPhone("18297767423");
         EsPagination<User> userEsPagination = userRestEsClient.search(u, null, null, null, null, null, new EsPage(1,100), User.class);
         System.out.println(userEsPagination.getData());
 

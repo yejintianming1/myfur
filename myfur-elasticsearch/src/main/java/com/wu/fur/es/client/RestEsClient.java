@@ -113,13 +113,25 @@ public class RestEsClient {
         }
     }
 
-    //创建索引
+    //根据配置创建索引索引
     public boolean createIndex(Class clazz) throws IOException {
-
+        boolean success = true;
         String mappingJson = EsReader.readerMappingJson(clazz);
         System.out.println(mappingJson);
 
-        CreateIndexRequest request = new CreateIndexRequest(esSourceConfig.getIndex());//创建索引
+        String[] indexGroupNodes = esSourceConfig.getIndexGroupNodes();
+        for (int i = 0; i < indexGroupNodes.length; i++) {
+            success = createIndex(clazz, indexGroupNodes[i]);
+        }
+        return success;
+    }
+
+    //创建索引
+    public boolean createIndex(Class clazz,String index) throws IOException {
+
+        String mappingJson = EsReader.readerMappingJson(clazz);
+
+        CreateIndexRequest request = new CreateIndexRequest(index);//创建索引
         //创建的每个索引都可以有与之关联的特定设置。
         request.settings(Settings.builder()
                 .put("index.number_of_shards", esSourceConfig.getShards())
@@ -301,15 +313,15 @@ public class RestEsClient {
 
     public <T> boolean indexDoc(T t) throws Exception {
 //        return indexDoc(t,EsReader.readRouting(t));
-        return indexDoc(t,esSourceConfig.getEsRoutingAlgorithm().doRouting(EsReader.readFieldValue(t,esSourceConfig.getRoutingField())));
+        return indexDoc(t,esSourceConfig.getEsIndexAlgorithm().doIndex(esSourceConfig,EsReader.readFieldValue(t,esSourceConfig.getIndexField())),esSourceConfig.getEsRoutingAlgorithm().doRouting(esSourceConfig,EsReader.readFieldValue(t,esSourceConfig.getRoutingField())));
     }
 
     //索引一个document
-    public <T> boolean indexDoc(T t,String routing) throws IOException {
+    public <T> boolean indexDoc(T t,String index,String routing) throws Exception {
 
 
         IndexRequest indexRequest = new IndexRequest(
-                esSourceConfig.getIndex(),//索引名称
+                index,//索引名称
                 esSourceConfig.getType());//类型名称
 
         //==============================提供文档源========================================
@@ -379,7 +391,7 @@ public class RestEsClient {
         IndexResponse indexResponse = client.index(indexRequest, RequestOptions.DEFAULT);
         //Index Response
         //返回的IndexResponse允许检索有关执行操作的信息，如下所示：
-        String index = indexResponse.getIndex();
+//        String index = indexResponse.getIndex();
         String type = indexResponse.getType();
         String id = indexResponse.getId();
         long version = indexResponse.getVersion();
@@ -469,14 +481,27 @@ public class RestEsClient {
     }
 
     public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,Class<T> clazz) throws Exception {
-        return search(terms,matches,orTerms,orMatches,prefixItems,sortFields,page,esSourceConfig.getEsRoutingAlgorithm().doRouting(EsReader.readFieldValue(terms,esSourceConfig.getRoutingField())),clazz);
+        String indexFieldValue = EsReader.readFieldValue(terms,esSourceConfig.getIndexField());
+        String index = !StringUtils.isBlank(indexFieldValue) ? esSourceConfig.getEsIndexAlgorithm().doIndex(esSourceConfig,indexFieldValue) : null;
+        String routing = !StringUtils.isBlank(indexFieldValue) ? esSourceConfig.getEsRoutingAlgorithm().doRouting(esSourceConfig,EsReader.readFieldValue(terms,esSourceConfig.getRoutingField())) : null;
+        if (StringUtils.isBlank(index)) {
+            //TODO 改造成多线程查询
+            for (int i = 0; i < esSourceConfig.getIndexGroupNodes().length; i++) {
+                index = esSourceConfig.getIndexGroupNodes()[i];
+                EsPagination<T> result = search(terms, matches, orTerms, orMatches, prefixItems, sortFields, page, index, routing, clazz);
+                if (result.getData() != null) {
+                    return result;
+                }
+            }
+        }
+        return search(terms,matches,orTerms,orMatches,prefixItems,sortFields,page,index,routing,clazz);
     }
 
     /**
      * 条件搜索
      */
-    public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,String routing,Class<T> clazz) throws IOException {
-        SearchRequest searchRequest = new SearchRequest(esSourceConfig.getIndex());
+    public <T,Q,E,O,R,W> EsPagination<T> search(Q terms,E matches,O orTerms,R orMatches,W prefixItems,SortField[] sortFields,EsPage page,String index,String routing,Class<T> clazz) throws Exception {
+        SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.types(esSourceConfig.getType());
         if (!StringUtils.isBlank(routing)) {
             searchRequest.routing(routing);
@@ -576,13 +601,13 @@ public class RestEsClient {
         client.close();
     }
 
-    public void getDocHockey() throws IOException {
-        System.out.println("---------------do some thing-----------------");
-        GetRequest getRequest = new GetRequest(esSourceConfig.getIndex(),esSourceConfig.getType(),"1");
-
-        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
-        System.out.println(getResponse.getSourceAsString());
-    }
+//    public void getDocHockey() throws IOException {
+//        System.out.println("---------------do some thing-----------------");
+//        GetRequest getRequest = new GetRequest(esSourceConfig.getIndex(),esSourceConfig.getType(),"1");
+//
+//        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+//        System.out.println(getResponse.getSourceAsString());
+//    }
 
     //获取一个document
     public void getDoc() throws IOException {

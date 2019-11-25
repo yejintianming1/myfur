@@ -451,13 +451,13 @@ public class RestEsClientCopy {
         client.close();
     }
 
-    public void getDocHockey() throws IOException {
-        System.out.println("---------------do some thing-----------------");
-        GetRequest getRequest = new GetRequest(esSourceConfig.getIndex(),esSourceConfig.getType(),"1");
-
-        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
-        System.out.println(getResponse.getSourceAsString());
-    }
+//    public void getDocHockey() throws IOException {
+//        System.out.println("---------------do some thing-----------------");
+//        GetRequest getRequest = new GetRequest(esSourceConfig.getIndex(),esSourceConfig.getType(),"1");
+//
+//        GetResponse getResponse = client.get(getRequest, RequestOptions.DEFAULT);
+//        System.out.println(getResponse.getSourceAsString());
+//    }
 
     //获取一个document
     public void getDoc() throws IOException {

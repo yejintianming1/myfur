@@ -1,9 +1,9 @@
 package com.wu.fur.es.client;
 
 /**
- * ES路由算法解耦
+ * ES路由算法接口
  */
 public interface EsRoutingAlgorithm {
 
-    public String doRouting(String routingFieldValue);
+    String doRouting(EsSourceConfig config,String routingFieldValue);
 }
