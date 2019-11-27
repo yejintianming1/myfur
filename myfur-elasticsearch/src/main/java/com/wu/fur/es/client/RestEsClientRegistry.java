@@ -31,6 +31,9 @@ public class RestEsClientRegistry implements BeanDefinitionRegistryPostProcessor
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         Environment env = applicationContext.getEnvironment();
 
+        //读取前缀为
+
+
         for (int i = 1; i <= 100; i++) {
             String hostPorts = env.getProperty("es.clientSource."+base_client+i+".host");
             if (StringUtils.isBlank(hostPorts)) break;
