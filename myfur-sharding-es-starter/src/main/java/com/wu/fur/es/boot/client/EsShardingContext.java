@@ -6,27 +6,27 @@ import java.util.Map;
 
 public class EsShardingContext implements EsContext {
 
-    private Map<String, EsRestDataSource> dataSourceMap;
-    private EsRestDataSource defaultDataSource;
+    private Map<String, EsDataSource> dataSourceMap;
+    private EsDataSource defaultDataSource;
     private Map<String, EsShadingTableRule> ruleMap;
 
-    public EsShardingContext(Map<String, EsRestDataSource> dataSourceMap, EsRestDataSource defaultDataSource, Map<String, EsShadingTableRule> ruleMap) {
+    public EsShardingContext(Map<String, EsDataSource> dataSourceMap, EsDataSource defaultDataSource, Map<String, EsShadingTableRule> ruleMap) {
         this.dataSourceMap = dataSourceMap;
         this.defaultDataSource = defaultDataSource;
         this.ruleMap = ruleMap;
     }
 
     @Override
-    public Map<String, EsRestDataSource> getDataSourceMap() {
+    public Map<String, EsDataSource> getDataSourceMap() {
         return dataSourceMap;
     }
 
-    public void setDataSourceMap(Map<String, EsRestDataSource> dataSourceMap) {
+    public void setDataSourceMap(Map<String, EsDataSource> dataSourceMap) {
         this.dataSourceMap = dataSourceMap;
     }
 
     @Override
-    public EsRestDataSource getDefaultDataSource() {
+    public EsDataSource getDefaultDataSource() {
         return defaultDataSource;
     }
 

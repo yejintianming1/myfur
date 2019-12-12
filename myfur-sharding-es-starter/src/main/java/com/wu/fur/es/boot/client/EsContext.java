@@ -4,11 +4,11 @@ import java.util.Map;
 
 public interface EsContext {
 
-    Map<String, EsRestDataSource> getDataSourceMap();
+    Map<String, EsDataSource> getDataSourceMap();
 
     Map<String, EsShadingTableRule> getRuleMap();
 
-    EsRestDataSource getDefaultDataSource();
+    EsDataSource getDefaultDataSource();
 
     void close();
 

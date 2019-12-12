@@ -22,7 +22,6 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PreDestroy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -54,15 +53,15 @@ public class RestEsApi implements EsApi {
         Map<String, EsShadingTableRule> ruleMap = esContext.getRuleMap();
         EsShadingTableRule tableRule = ruleMap.get(logicIndexName);
         String actualDataNode = tableRule.getActualDataNode();
-        Map<String, EsRestDataSource> dataSourceMap = esContext.getDataSourceMap();
-        EsRestDataSource esRestDataSource = dataSourceMap.get(actualDataNode);
+        Map<String, EsDataSource> dataSourceMap = esContext.getDataSourceMap();
+        EsDataSource esDataSource = dataSourceMap.get(actualDataNode);
         String indexColumn = tableRule.getIndexColumn();
         EsIndexAlgorithm esIndexAlgorithm = tableRule.getEsIndexAlgorithm();
-        List<String> indexArr = esRestDataSource.getIndexArr();
+        List<String> indexArr = esDataSource.getActualIndexNodes();
         String routingColumn = tableRule.getRoutingColumn();
         EsRoutingAlgorithm esRoutingAlgorithm = tableRule.getEsRoutingAlgorithm();
-        Long shards = esRestDataSource.getShards();
-        RestHighLevelClient client = esRestDataSource.getClient();
+        Long shards = esDataSource.getShards();
+        RestHighLevelClient client = esDataSource.getClient();
 
         //前置操作，校验分片字段的值是否存在，如果为空，则报异常
         //调用索引分片算法获取指定索引
@@ -125,20 +124,20 @@ public class RestEsApi implements EsApi {
         Map<String, EsShadingTableRule> ruleMap = esContext.getRuleMap();
         EsShadingTableRule tableRule = ruleMap.get(logicIndexName);
         String actualDataNode = tableRule.getActualDataNode();
-        Map<String, EsRestDataSource> dataSourceMap = esContext.getDataSourceMap();
-        EsRestDataSource esRestDataSource = dataSourceMap.get(actualDataNode);
+        Map<String, EsDataSource> dataSourceMap = esContext.getDataSourceMap();
+        EsDataSource esDataSource = dataSourceMap.get(actualDataNode);
         String indexColumn = tableRule.getIndexColumn();
         EsIndexAlgorithm esIndexAlgorithm = tableRule.getEsIndexAlgorithm();
-        List<String> indexArr = esRestDataSource.getIndexArr();
+        List<String> indexArr = esDataSource.getActualIndexNodes();
         String routingColumn = tableRule.getRoutingColumn();
         EsRoutingAlgorithm esRoutingAlgorithm = tableRule.getEsRoutingAlgorithm();
-        Long shards = esRestDataSource.getShards();
-        RestHighLevelClient client = esRestDataSource.getClient();
+        Long shards = esDataSource.getShards();
+        RestHighLevelClient client = esDataSource.getClient();
 
         String indexValue = EsReader.readFieldValue(terms, indexColumn);
         String index = !StringUtils.isBlank(indexValue) ? esIndexAlgorithm.doSharding(indexArr, indexValue) : null;
         String routingValue = EsReader.readFieldValue(terms,routingColumn);
-        String routing = !StringUtils.isBlank(routingValue) ? esRoutingAlgorithm.doSharding(shards.intValue(), routingColumn) : null;
+        String routing = !StringUtils.isBlank(routingValue) ? esRoutingAlgorithm.doSharding(shards.intValue(), routingValue) : null;
 
         if (StringUtils.isBlank(index)) {
             //TODO 此处可以改造成多线程查询，或者优化成策略模式

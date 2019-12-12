@@ -1,7 +1,6 @@
 package com.wu.fur.es.boot;
 
 
-import com.alibaba.fastjson.JSON;
 import com.wu.fur.es.boot.client.*;
 import com.wu.fur.es.boot.sharding.ShardingRuleConfigurationProperties;
 import com.wu.fur.es.boot.sharding.ShardingTableRuleConfiguration;
@@ -16,10 +15,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 
-import javax.annotation.PreDestroy;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 
 @Configuration
@@ -31,10 +28,10 @@ public class SpringBootConfiguration implements EnvironmentAware,DisposableBean 
     private final ShardingRuleConfigurationProperties shardingProperties;
 
     //数据源:key=数据源名称，数据源
-    private final Map<String, EsRestDataSource> dataSourceMap = new LinkedHashMap<>();
+    private final Map<String, EsDataSource> dataSourceMap = new LinkedHashMap<>();
 
     //默认数据源
-    private EsRestDataSource defaultDataSource;
+    private EsDataSource defaultDataSource;
 
     //分片规则:key=逻辑索引，value=数据源名称
     private final Map<String, EsShadingTableRule> ruleMap = new LinkedHashMap<>();

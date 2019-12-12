@@ -1,5 +1,8 @@
 package com.wu.fur.es.boot.utils;
 
+import com.google.common.base.CaseFormat;
+import com.google.common.collect.Sets;
+import com.wu.fur.es.boot.client.EsDataSource;
 import com.wu.fur.es.boot.client.EsRestDataSource;
 import org.apache.http.HttpHost;
 import org.apache.http.client.config.RequestConfig;
@@ -8,69 +11,63 @@ import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
 import org.elasticsearch.client.RestHighLevelClient;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.lang.reflect.Method;
+import java.util.*;
 
 public class EsDataSourceUtil {
 
-    public static EsRestDataSource builder(Map<String, Object> dataSourceProps) {
-        EsRestDataSource esRestDataSource = new EsRestDataSource();
-        String hostPorts = dataSourceProps.get("host").toString();
-        //hostPort处理
-        String[] hostPort = hostPorts.split(",");
-        List<HttpHost> hostList = new ArrayList<>();
-        for (int j = 0; j < hostPort.length; j++) {
-            String[] hp = hostPort[j].split( ":");
-            String host = hp[0];
-            String port = hp[1];
-            //构建HttpPort对象
-            HttpHost httpHost = new HttpHost(host,Integer.valueOf(port));
-            hostList.add(httpHost);
+    private static final String SET_METHOD_PREFIX = "set";
+
+    private static Collection<Class<?>> generalClassType;
+
+    static {
+        generalClassType = Sets.<Class<?>>newHashSet(boolean.class, Boolean.class, int.class, Integer.class, long.class, Long.class, String.class);
+    }
+
+    public static EsDataSource builder(Map<String, Object> dataSourceProps) {
+        EsDataSource esDataSource = new EsRestDataSource();
+        dataSourceProps.forEach((key,value) -> {
+            callSetterMethod(esDataSource,getSetterMethodName(key), null == value ? null : value.toString());
+        });
+        if (esDataSource.getHttpHosts() == null) {
+            esDataSource.buildHttpHosts();
         }
-        esRestDataSource.setHttpHosts(hostList.toArray(new HttpHost[hostList.size()]));
-        String connectTimeout = dataSourceProps.get("connect-timeout").toString();
-        String socketTimeout = dataSourceProps.get("socket-timeout").toString();
-        String requestTimeout = dataSourceProps.get("request-timeout").toString();
-        String maxConnectNum = dataSourceProps.get("max-connect-num").toString();
-        String maxConnectRoute = dataSourceProps.get("max-connect-route").toString();
-        String indexNodes = dataSourceProps.get("index-nodes").toString();
-        String shards = dataSourceProps.get("shards").toString();
-        String replicas = dataSourceProps.get("replicas").toString();
+        //实际索引节点
+        if (esDataSource.getActualIndexNodes() == null) {
+            esDataSource.buildActualIndexNodes();
+        }
+        //client
+        if (esDataSource.getClient() == null) {
+            esDataSource.buildClient();
+        }
+        return esDataSource;
+    }
 
-        esRestDataSource.setConnectTimeout(Long.valueOf(connectTimeout));
-        esRestDataSource.setSocketTimeout(Long.valueOf(socketTimeout));
-        esRestDataSource.setRequestTimeout(Long.valueOf(requestTimeout));
-        esRestDataSource.setMaxConnectNum(Long.valueOf(maxConnectNum));
-        esRestDataSource.setMaxConnectRoute(Long.valueOf(maxConnectRoute));
-        esRestDataSource.setIndexArr(Arrays.asList(indexNodes.split(",")));
-        esRestDataSource.setShards(Long.valueOf(shards));
-        esRestDataSource.setReplicas(Long.valueOf(replicas));
 
-                RestClientBuilder builder = RestClient.builder(esRestDataSource.getHttpHosts());
-        builder.setRequestConfigCallback(new RestClientBuilder.RequestConfigCallback() {
 
-            @Override
-            public RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder builder) {
-                builder.setConnectTimeout(esRestDataSource.getConnectTimeout().intValue());
-                builder.setSocketTimeout(esRestDataSource.getSocketTimeout().intValue());
-                builder.setConnectionRequestTimeout(esRestDataSource.getRequestTimeout().intValue());
-                return builder;
+    private static String getSetterMethodName(final String propertyName) {
+        if (propertyName.contains("-")) {
+            return CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL, SET_METHOD_PREFIX + "-" + propertyName);
+        }
+        return SET_METHOD_PREFIX + String.valueOf(propertyName.charAt(0)).toUpperCase() + propertyName.substring(1, propertyName.length());
+    }
+
+    private static void callSetterMethod(final EsDataSource dataSource, final String methodName, final String setterValue) {
+        for (Class<?> each : generalClassType) {
+            try {
+                Method method = dataSource.getClass().getMethod(methodName, each);
+                if (boolean.class == each || Boolean.class == each) {
+                    method.invoke(dataSource, Boolean.valueOf(setterValue));
+                } else if (int.class == each || Integer.class == each) {
+                    method.invoke(dataSource, Integer.parseInt(setterValue));
+                } else if (long.class == each || Long.class == each) {
+                    method.invoke(dataSource, Long.parseLong(setterValue));
+                } else {
+                    method.invoke(dataSource, setterValue);
+                }
+                return;
+            } catch (final ReflectiveOperationException ignored) {
             }
-        });
-
-        builder.setHttpClientConfigCallback(new RestClientBuilder.HttpClientConfigCallback() {
-            @Override
-            public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpAsyncClientBuilder) {
-                httpAsyncClientBuilder.setMaxConnTotal(esRestDataSource.getMaxConnectNum().intValue());
-                httpAsyncClientBuilder.setMaxConnPerRoute(esRestDataSource.getMaxConnectRoute().intValue());
-                return httpAsyncClientBuilder;
-            }
-        });
-
-        RestHighLevelClient client = new RestHighLevelClient(builder);
-        esRestDataSource.setClient(client);
-        return esRestDataSource;
+        }
     }
 }
