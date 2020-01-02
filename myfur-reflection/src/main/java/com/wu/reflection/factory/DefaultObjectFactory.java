@@ -1,6 +1,7 @@
 package com.wu.reflection.factory;
 
 import com.wu.reflection.ReflectionException;
+import com.wu.reflection.Reflector;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -32,7 +33,7 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
                 try {
                     return constructor.newInstance();
                 } catch (IllegalAccessException e) {
-                    if (canControlMemberAccessible()) {
+                    if (Reflector.canControlMemberAccessible()) {
                         constructor.setAccessible(true);
                         return constructor.newInstance();
                     } else {
@@ -45,7 +46,7 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
             try {
                 return constructor.newInstance(constructorArgs.toArray(new Object[constructorArgs.size()]));
             } catch (IllegalAccessException e) {
-                if (canControlMemberAccessible()) {
+                if (Reflector.canControlMemberAccessible()) {
                     constructor.setAccessible(true);
                     return constructor.newInstance(constructorArgs.toArray(new Object[constructorArgs.size()]));
                 } else {
@@ -84,18 +85,4 @@ public class DefaultObjectFactory implements ObjectFactory, Serializable {
         return classToCreate;
     }
 
-    //TODO 需要移到Reflector类里
-    //是否允许访问
-    public static boolean canControlMemberAccessible() {
-        try {
-            //java安全管理器判断是否应许操作
-            SecurityManager securityManager = System.getSecurityManager();
-            if (null != securityManager) {
-                securityManager.checkPermission(new ReflectPermission("suppressAccessChecks"));
-            }
-        } catch (SecurityException e) {
-            return false;
-        }
-        return true;
-    }
 }

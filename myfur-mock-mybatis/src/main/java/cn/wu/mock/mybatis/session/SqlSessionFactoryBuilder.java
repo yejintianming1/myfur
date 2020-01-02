@@ -10,9 +10,9 @@ import java.util.Properties;
 
 public class SqlSessionFactoryBuilder {
 
-    public SqlSessionFactory build(Reader reader) {
-        return build(reader, null)
-    }
+//    public SqlSessionFactory build(Reader reader) {
+//        return build(reader, null)
+//    }
 
     public SqlSessionFactory build(Reader reader, String environment, Properties properties) {
 
@@ -28,6 +28,6 @@ public class SqlSessionFactoryBuilder {
                 // ignore this error
             }
         }
-
+        return null;
     }
 }

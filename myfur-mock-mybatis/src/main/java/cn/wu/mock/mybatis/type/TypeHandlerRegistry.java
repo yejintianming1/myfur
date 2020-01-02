@@ -2,6 +2,7 @@ package cn.wu.mock.mybatis.type;
 
 import cn.wu.mock.mybatis.binding.MapperMethod.ParamMap;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -27,8 +28,24 @@ public final class TypeHandlerRegistry {
 
     }
 
+    public <T> TypeHandler<T> getTypeHandler(Class<T> type) {
+        return getTypeHandler((Type) type, null);
+    }
+
+    public <T> TypeHandler<T> getTypeHandler(TypeReference<T> javaTypeReference) {
+        return getTypeHandler(javaTypeReference, null);
+    }
+
+    public TypeHandler<?> getTypeHandler(JdbcType jdbcType) {
+        return jdbcTypeHandlerMap.get(jdbcType);
+    }
+
     public <T> TypeHandler<T> getTypeHandler(Class<T> type, JdbcType jdbcType) {
         return getTypeHandler((Type) type, jdbcType);
+    }
+
+    public <T> TypeHandler<T> getTypeHandler(TypeReference<T> javaTypeReference, JdbcType jdbcType) {
+        return getTypeHandler(javaTypeReference.getRawType(), jdbcType);
     }
 
     private <T> TypeHandler<T> getTypeHandler(Type type, JdbcType jdbcType) {
@@ -36,6 +53,17 @@ public final class TypeHandlerRegistry {
             return null;
         }
         Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = getJdbcHandlerMap(type);
+        TypeHandler<?> handler = null;
+        if (jdbcHandlerMap != null) {
+            handler = jdbcHandlerMap.get(jdbcType);
+            if (handler == null) {
+                handler = jdbcHandlerMap.get(null);
+            }
+            if (handler == null) {
+                handler = pickSoleHandler(jdbcHandlerMap);
+            }
+        }
+        return (TypeHandler<T>) handler;
     }
 
     private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMap(Type type) {
@@ -48,10 +76,16 @@ public final class TypeHandlerRegistry {
             if (Enum.class.isAssignableFrom(clazz)) {
                 Class<?> enumClass = clazz.isAnonymousClass() ? clazz.getSuperclass() : clazz;
                 jdbcHandlerMap = getJdbcHandlerMapForEnumInterfaces(enumClass, enumClass);
-
+                if (jdbcHandlerMap == null) {
+                    register(enumClass, getInstance(enumClass, defaultEnumTypeHandler));
+                    return typeHandlerMap.get(enumClass);
+                }
+            } else {
+                jdbcHandlerMap = getJdbcHandlerMapForSuperclass(clazz);
             }
         }
-
+        typeHandlerMap.put(type, jdbcHandlerMap == null ? NULL_TYPE_HANDLER_MAP : jdbcHandlerMap);
+        return jdbcHandlerMap;
     }
 
     private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMapForEnumInterfaces(Class<?> clazz, Class<?> enumClazz) {
@@ -68,13 +102,51 @@ public final class TypeHandlerRegistry {
                 return newMap;
             }
         }
+        return null;
+    }
+
+    private Map<JdbcType, TypeHandler<?>> getJdbcHandlerMapForSuperclass(Class<?> clazz) {
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass == null || Object.class.equals(superclass)) {
+            return null;
+        }
+        Map<JdbcType, TypeHandler<?>> jdbcHandlerMap = typeHandlerMap.get(superclass);
+        if (jdbcHandlerMap != null) {
+            return jdbcHandlerMap;
+        } else {
+            return getJdbcHandlerMapForSuperclass(superclass);
+        }
+    }
+
+    private TypeHandler<?> pickSoleHandler(Map<JdbcType, TypeHandler<?>> jdbcHandlerMap) {
+        TypeHandler<?> soleHandler = null;
+        for (TypeHandler<?> handler:jdbcHandlerMap.values()
+             ) {
+            if (soleHandler == null) {
+                soleHandler = handler;
+            } else if (!handler.getClass().equals(soleHandler.getClass())) {
+                return null;
+            }
+        }
+        return soleHandler;
     }
 
     public <T> TypeHandler<?> getInstance(Class<?> javaTypeClass, Class<? extends TypeHandler> typeHandlerClass) {
         if (javaTypeClass != null) {
             try {
-
-            } catch (NoSuchMethodException )
+                Constructor<?> c = typeHandlerClass.getConstructor(Class.class);
+                return (TypeHandler<T>) c.newInstance(javaTypeClass);
+            } catch (NoSuchMethodException ignored) {
+                // ignored
+            } catch (Exception e) {
+                throw new TypeException("Failed invoking constructor for handler " + typeHandlerClass, e);
+            }
+        }
+        try {
+            Constructor<?> c = typeHandlerClass.getConstructor();
+            return (TypeHandler<T>) c.newInstance();
+        } catch (Exception e) {
+            throw new TypeException("Unable to find a usable constructor for " + typeHandlerClass, e);
         }
     }
 

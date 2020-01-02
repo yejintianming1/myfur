@@ -9,6 +9,8 @@ import cn.wu.mock.mybatis.datasource.jndi.JndiDataSourceFactory;
 import cn.wu.mock.mybatis.datasource.pooled.PooledDataSourceFactory;
 import cn.wu.mock.mybatis.datasource.unpooled.UnpooledDataSourceFactory;
 import cn.wu.mock.mybatis.mapping.VendorDatabaseIdProvider;
+import cn.wu.mock.mybatis.reflection.MetaObject;
+import cn.wu.mock.mybatis.scripting.xmltags.XMLLanguageDriver;
 import cn.wu.mock.mybatis.transaction.jdbc.JdbcTransactionFactory;
 import cn.wu.mock.mybatis.transaction.managed.ManagedTransactionFactory;
 import cn.wu.mock.mybatis.type.TypeAliasRegistry;
@@ -20,6 +22,9 @@ import java.util.Properties;
  * 核心的配置类
  */
 public class Configuration {
+
+
+    protected boolean lazyLoadingEnabled = false;
 
     protected final TypeHandlerRegistry typeHandlerRegistry = new TypeHandlerRegistry();
     protected final TypeAliasRegistry typeAliasRegistry = new TypeAliasRegistry();
@@ -46,6 +51,18 @@ public class Configuration {
         typeAliasRegistry.registerAlias("XML", XMLLanguageDriver.class);
     }
 
+    public boolean isLazyLoadingEnabled() {
+        return lazyLoadingEnabled;
+    }
+
+    public Properties getVariables() {
+        return variables;
+    }
+
+    public MetaObject newMetaObject(Object object) {
+        return null;
+//        return MetaObject.forObject(object, objectFactory, objectWrapperFactory, reflectorFactory);
+    }
 
     public TypeHandlerRegistry getTypeHandlerRegistry() {
         return typeHandlerRegistry;
