@@ -1,5 +1,6 @@
 package com.wu.mock.spring.mybatis.mapper;
 
+import com.wu.mock.spring.mybatis.SqlSessionTemplate;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -25,6 +26,8 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
     private boolean addToConfig = true;
 
     private SqlSessionFactory sqlSessionFactory;
+
+    private SqlSessionTemplate sqlSessionTemplate;
 
     private String sqlSessionTemplateBeanName;
 
@@ -60,8 +63,16 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
         this.sqlSessionFactoryBeanName = sqlSessionFactoryBeanName;
     }
 
+    public void setSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
+        this.sqlSessionTemplate = sqlSessionTemplate;
+    }
+
     public void setSqlSessionTemplateBeanName(String sqlSessionTemplateBeanName) {
         this.sqlSessionTemplateBeanName = sqlSessionTemplateBeanName;
+    }
+
+    public void setMapperFactoryBean(MapperFactoryBean<?> mapperFactoryBean) {
+        this.mapperFactoryBean = mapperFactoryBean != null ? mapperFactoryBean : new MapperFactoryBean<Object>();
     }
 
     /**自定义过滤规则*/
@@ -102,7 +113,7 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
      * @return
      */
     @Override
-    protected Set<BeanDefinitionHolder> doScan(String... basePackages) {
+    public Set<BeanDefinitionHolder> doScan(String... basePackages) {
         Set<BeanDefinitionHolder> beanDefinitions = super.doScan(basePackages);
 
         if (beanDefinitions.isEmpty()) {
@@ -144,7 +155,13 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
                 }
                 definition.getPropertyValues().add("sqlSessionTemplate", new RuntimeBeanReference(this.sqlSessionTemplateBeanName));
                 explicitFactoryUsed = true;
-            } //TODO sqlSessionTemplate功能后续补充
+            } else if (this.sqlSessionTemplate != null) {
+                if (explicitFactoryUsed) {
+                    logger.warn("Cannot use both: sqlSessionTemplate and sqlSessionFactory together. sqlSessionFactory is ignored.");
+                }
+                definition.getPropertyValues().add("sqlSessionTemplate", this.sqlSessionTemplate);
+                explicitFactoryUsed = true;
+            }
 
             if (!explicitFactoryUsed) {
                 if (logger.isDebugEnabled()) {
@@ -172,6 +189,8 @@ public class ClassPathMapperScanner extends ClassPathBeanDefinitionScanner {
             return false;
         }
     }
+
+
 }
 
 

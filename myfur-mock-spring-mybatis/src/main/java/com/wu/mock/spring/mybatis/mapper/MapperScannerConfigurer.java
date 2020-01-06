@@ -1,5 +1,6 @@
 package com.wu.mock.spring.mybatis.mapper;
 
+import com.wu.mock.spring.mybatis.SqlSessionTemplate;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.PropertyValue;
@@ -33,7 +34,7 @@ public class MapperScannerConfigurer implements BeanDefinitionRegistryPostProces
 
     private SqlSessionFactory sqlSessionFactory;
 
-//    private SqlSessionTemplate sqlSessionTemplate;
+    private SqlSessionTemplate sqlSessionTemplate;
 
     private String sqlSessionFactoryBeanName;
 
@@ -62,6 +63,10 @@ public class MapperScannerConfigurer implements BeanDefinitionRegistryPostProces
 
     public void setSqlSessionFactoryBeanName(String sqlSessionFactoryName) {
         this.sqlSessionFactoryBeanName = sqlSessionFactoryName;
+    }
+
+    public void setSqlSessionTemplate(SqlSessionTemplate sqlSessionTemplate) {
+        this.sqlSessionTemplate = sqlSessionTemplate;
     }
 
     public void setSqlSessionTemplateBeanName(String sqlSessionTemplateName) {
@@ -118,7 +123,7 @@ public class MapperScannerConfigurer implements BeanDefinitionRegistryPostProces
         scanner.setAnnotationClass(this.annotationClass);
         scanner.setMarkerInterface(this.markerInterface);
         scanner.setSqlSessionFactory(this.sqlSessionFactory);
-//        scanner.setSqlSessionTemplate(this.sqlSessionTemplate);
+        scanner.setSqlSessionTemplate(this.sqlSessionTemplate);
         scanner.setSqlSessionFactoryBeanName(this.sqlSessionFactoryBeanName);
         scanner.setSqlSessionTemplateBeanName(this.sqlSessionTemplateBeanName);
 
